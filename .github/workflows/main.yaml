@@ -43,6 +43,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           call: check
+          context: backend
+          file: backend/Dockerfile
 
       - name: Build and push Docker image
         id: push
