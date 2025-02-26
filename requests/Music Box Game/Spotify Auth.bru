@@ -1,0 +1,19 @@
+meta {
+  name: Spotify Auth
+  type: http
+  seq: 4
+}
+
+get {
+  url: http://localhost:8080/spotify/auth?api_token=jg0GjVvlOdlQ8wC11Irp22zKwtJhExpXpPTNvXkMaOSfdMqR1J0JXoxR1Ve0oFEg
+  body: none
+  auth: bearer
+}
+
+params:query {
+  api_token: jg0GjVvlOdlQ8wC11Irp22zKwtJhExpXpPTNvXkMaOSfdMqR1J0JXoxR1Ve0oFEg
+}
+
+auth:bearer {
+  token: 
+}
