@@ -1,10 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log/slog"
 	"os"
 
+	"github.com/domnikl/music-box-game/backend/internal/repositories"
 	"github.com/domnikl/music-box-game/backend/internal/routes"
+	"github.com/domnikl/music-box-game/backend/internal/services"
 	"github.com/domnikl/music-box-game/backend/internal/spotify"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
@@ -14,12 +17,22 @@ import (
 	"gorm.io/gorm"
 )
 
-func main() {
-	spotifyClientID := os.Getenv("SPOTIFY_CLIENT_ID")
-	spotifyClientSecret := os.Getenv("SPOTIFY_CLIENT_SECRET")
-	spotifyRedirectURL := os.Getenv("SPOTIFY_REDIRECT_URI")
+func GetRequiredEnvValue(name string) string {
+	value := os.Getenv(name)
+	if value == "" {
+		slog.Error(fmt.Sprintf("Environment variable %s is not set", name))
+		os.Exit(1)
+	}
 
-	db, err := gorm.Open(postgres.Open(os.Getenv("DB_DSN")), &gorm.Config{})
+	return value
+}
+
+func main() {
+	spotifyClientID := GetRequiredEnvValue("SPOTIFY_CLIENT_ID")
+	spotifyClientSecret := GetRequiredEnvValue("SPOTIFY_CLIENT_SECRET")
+	spotifyRedirectURL := GetRequiredEnvValue("SPOTIFY_REDIRECT_URI")
+
+	db, err := gorm.Open(postgres.Open(GetRequiredEnvValue("DB_DSN")), &gorm.Config{})
 	if err != nil {
 		panic(err)
 	}
@@ -42,6 +55,7 @@ func main() {
 		spotifyClientID,
 		spotifyClientSecret,
 		spotifyRedirectURL,
+		services.NewUserService(repositories.NewUserRepository(db)),
 	)
 
 	e := echo.New()

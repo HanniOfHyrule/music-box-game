@@ -10,15 +10,17 @@ import (
 	"strconv"
 
 	"github.com/domnikl/music-box-game/backend/internal/models"
+	"github.com/domnikl/music-box-game/backend/internal/services"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/spotify"
 )
 
 type Spotify struct {
 	oauthConfig oauth2.Config
+	userService *services.UserService
 }
 
-func NewSpotify(clientID, clientSecret, redirectURL string) *Spotify {
+func NewSpotify(clientID, clientSecret, redirectURL string, userService *services.UserService) *Spotify {
 	conf := oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
@@ -27,7 +29,7 @@ func NewSpotify(clientID, clientSecret, redirectURL string) *Spotify {
 		RedirectURL:  redirectURL,
 	}
 
-	return &Spotify{oauthConfig: conf}
+	return &Spotify{oauthConfig: conf, userService: userService}
 }
 
 func (s *Spotify) AuthURL(state string) string {
@@ -140,7 +142,7 @@ func (s *Spotify) Next(user *models.User) error {
 	return nil
 }
 
-func (s *Spotify) doRequest(method string, path string, user *models.User) (*http.Response, error) {
+func (s *Spotify) doRequest(method string, path string, user *models.User, refreshTokens ...bool) (*http.Response, error) {
 	httpClient := &http.Client{}
 	url, err := url.Parse("https://api.spotify.com/v1" + path)
 	if err != nil {
@@ -161,9 +163,33 @@ func (s *Spotify) doRequest(method string, path string, user *models.User) (*htt
 	}
 
 	// TODO: handle token refresh automatically
-	if resp.StatusCode == http.StatusUnauthorized {
-		return resp, fmt.Errorf("unauthorized")
+	if resp.StatusCode == http.StatusUnauthorized && refreshTokens == nil {
+		s.refreshToken(user)
+		return s.doRequest(method, path, user, false)
 	}
 
 	return resp, nil
+}
+
+func (s *Spotify) refreshToken(user *models.User) error {
+	tokenSource := s.oauthConfig.TokenSource(context.Background(), &oauth2.Token{
+		RefreshToken: user.SpotifyRefreshToken,
+	})
+
+	token, err := tokenSource.Token()
+	if err != nil {
+		return err
+	}
+
+	user.SpotifyToken = token.AccessToken
+	user.SpotifyRefreshToken = token.RefreshToken
+
+	// only update specific fields
+	s.userService.UpdateUser(&models.User{
+		ID:                  user.ID,
+		SpotifyToken:        user.SpotifyToken,
+		SpotifyRefreshToken: user.SpotifyRefreshToken,
+	})
+
+	return nil
 }
