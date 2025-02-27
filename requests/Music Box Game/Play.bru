@@ -6,10 +6,18 @@ meta {
 
 post {
   url: http://localhost:8080/spotify/player/play
-  body: none
+  body: json
   auth: bearer
 }
 
 auth:bearer {
   token: {{bearerToken}}
+}
+
+body:json {
+  {
+    "device_id": "db64f56f5214abc9a74bf1bf4e25ac2b3b38700c",
+    "playlist_id": "5dhXwrpt3e1oDGWgDtwE4g"
+  }
+  
 }

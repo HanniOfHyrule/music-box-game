@@ -95,7 +95,7 @@ func (s *SpotifyController) GetPlaylist(c echo.Context) error {
 	id := c.Param("id")
 	user := c.Get("user").(*models.User)
 
-	playlist, err := s.spotify.Playlist(user, id)
+	playlist, err := s.spotify.GetPlaylist(user, id)
 
 	if err != nil {
 		slog.Error("Failed to get playlist: " + err.Error())
@@ -129,7 +129,7 @@ func (s *SpotifyController) GetPlaylists(c echo.Context) error {
 	}
 
 	user := c.Get("user").(*models.User)
-	playlists, err := s.spotify.Playlists(user, limit, offset)
+	playlists, err := s.spotify.GetPlaylists(user, limit, offset)
 
 	if err != nil {
 		slog.Error("Failed to get playlists: " + err.Error())
@@ -164,8 +164,20 @@ func (s *SpotifyController) Pause(c echo.Context) error {
 }
 
 func (s *SpotifyController) Play(c echo.Context) error {
+	type playRequest struct {
+		DeviceID   string `json:"device_id,omitempty"`
+		PlaylistID string `json:"playlist_id,omitempty"`
+	}
+
 	user := c.Get("user").(*models.User)
-	err := s.spotify.Play(user)
+
+	var req playRequest
+	if err := c.Bind(&req); err != nil {
+		slog.Error("Failed to bind request: " + err.Error())
+		return c.String(http.StatusBadRequest, "Invalid request")
+	}
+
+	err := s.spotify.Play(user, req.DeviceID, req.PlaylistID)
 
 	if err != nil {
 		slog.Error("Failed to start playback: " + err.Error())
@@ -173,4 +185,30 @@ func (s *SpotifyController) Play(c echo.Context) error {
 	}
 
 	return c.NoContent(http.StatusNoContent)
+}
+
+func (s *SpotifyController) GetDevices(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+
+	devices, err := s.spotify.GetDevices(user)
+
+	if err != nil {
+		slog.Error("Failed to get devices: " + err.Error())
+		return c.String(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusOK, devices)
+}
+
+func (s *SpotifyController) GetCurrentlyPlaying(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+
+	currentlyPlaying, err := s.spotify.GetCurrentlyPlaying(user)
+
+	if err != nil {
+		slog.Error("Failed to get currently playing: " + err.Error())
+		return c.String(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.JSON(http.StatusOK, currentlyPlaying)
 }
