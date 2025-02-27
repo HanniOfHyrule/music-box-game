@@ -1,0 +1,15 @@
+meta {
+  name: Play
+  type: http
+  seq: 8
+}
+
+post {
+  url: http://localhost:8080/spotify/player/play
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}

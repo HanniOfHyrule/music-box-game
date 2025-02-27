@@ -30,4 +30,6 @@ func setupSpotify(e *echo.Echo, db *gorm.DB, spotify *spotify.Spotify) {
 	needsSpotifyToken.GET("/playlists", controller.GetPlaylists)
 	needsSpotifyToken.GET("/playlists/:id", controller.GetPlaylist)
 	needsSpotifyToken.POST("/player/next", controller.Next)
+	needsSpotifyToken.POST("/player/pause", controller.Pause)
+	needsSpotifyToken.POST("/player/play", controller.Play)
 }

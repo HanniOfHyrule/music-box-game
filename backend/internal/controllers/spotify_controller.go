@@ -150,3 +150,27 @@ func (s *SpotifyController) Next(c echo.Context) error {
 
 	return c.NoContent(http.StatusNoContent)
 }
+
+func (s *SpotifyController) Pause(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+	err := s.spotify.Pause(user)
+
+	if err != nil {
+		slog.Error("Failed to pause playback: " + err.Error())
+		return c.String(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (s *SpotifyController) Play(c echo.Context) error {
+	user := c.Get("user").(*models.User)
+	err := s.spotify.Play(user)
+
+	if err != nil {
+		slog.Error("Failed to start playback: " + err.Error())
+		return c.String(http.StatusInternalServerError, "Internal server error")
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}

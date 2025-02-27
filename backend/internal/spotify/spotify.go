@@ -142,6 +142,34 @@ func (s *Spotify) Next(user *models.User) error {
 	return nil
 }
 
+func (s *Spotify) Pause(user *models.User) error {
+	resp, err := s.doRequest(http.MethodPut, "/me/player/pause", user)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to pause playback: %s %s", resp.Status, string(body))
+	}
+
+	return nil
+}
+
+func (s *Spotify) Play(user *models.User) error {
+	resp, err := s.doRequest(http.MethodPut, "/me/player/play", user)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("failed to start playback: %s %s", resp.Status, string(body))
+	}
+
+	return nil
+}
+
 func (s *Spotify) doRequest(method string, path string, user *models.User, refreshTokens ...bool) (*http.Response, error) {
 	httpClient := &http.Client{}
 	url, err := url.Parse("https://api.spotify.com/v1" + path)
@@ -162,7 +190,6 @@ func (s *Spotify) doRequest(method string, path string, user *models.User, refre
 		return resp, err
 	}
 
-	// TODO: handle token refresh automatically
 	if resp.StatusCode == http.StatusUnauthorized && refreshTokens == nil {
 		s.refreshToken(user)
 		return s.doRequest(method, path, user, false)
