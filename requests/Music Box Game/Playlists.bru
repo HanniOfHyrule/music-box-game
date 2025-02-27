@@ -5,11 +5,16 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/spotify/playlists
+  url: http://localhost:8080/spotify/playlists?offset=1&limit=50
   body: none
   auth: bearer
 }
 
+params:query {
+  offset: 1
+  limit: 50
+}
+
 auth:bearer {
-  token: jg0GjVvlOdlQ8wC11Irp22zKwtJhExpXpPTNvXkMaOSfdMqR1J0JXoxR1Ve0oFEg
+  token: {{bearerToken}}
 }

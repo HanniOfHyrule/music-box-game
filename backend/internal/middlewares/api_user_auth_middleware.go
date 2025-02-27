@@ -80,5 +80,5 @@ func apiTokenFromState(c echo.Context) string {
 		return ""
 	}
 
-	return strings.Split(c.QueryParam("state"), ":")[1]
+	return parts[1]
 }

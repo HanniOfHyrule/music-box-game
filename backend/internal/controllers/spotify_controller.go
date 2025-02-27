@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strconv"
 
 	"github.com/domnikl/music-box-game/backend/internal/crypto"
 	"github.com/domnikl/music-box-game/backend/internal/models"
@@ -79,6 +80,7 @@ func (s *SpotifyController) Callback(c echo.Context) error {
 
 	user := c.Get("user").(*models.User)
 	user.SpotifyToken = t.AccessToken
+	user.SpotifyRefreshToken = t.RefreshToken
 
 	err = s.userService.UpdateUser(user)
 	if err != nil {
@@ -93,7 +95,7 @@ func (s *SpotifyController) GetPlaylist(c echo.Context) error {
 	id := c.Param("id")
 	user := c.Get("user").(*models.User)
 
-	playlist, err := s.spotify.Playlist(user.SpotifyToken, id)
+	playlist, err := s.spotify.Playlist(user, id)
 
 	if err != nil {
 		slog.Error("Failed to get playlist: " + err.Error())
@@ -104,8 +106,30 @@ func (s *SpotifyController) GetPlaylist(c echo.Context) error {
 }
 
 func (s *SpotifyController) GetPlaylists(c echo.Context) error {
+	queryLimit := c.QueryParam("limit")
+	if queryLimit == "" {
+		queryLimit = "50"
+	}
+
+	limit, err := strconv.Atoi(c.QueryParam("limit"))
+	if err != nil {
+		slog.Error("Failed to parse limit: " + err.Error())
+		return c.String(http.StatusBadRequest, "Invalid limit")
+	}
+
+	queryOffset := c.QueryParam("offset")
+	if queryOffset == "" {
+		queryOffset = "0"
+	}
+
+	offset, err := strconv.Atoi(queryOffset)
+	if err != nil {
+		slog.Error("Failed to parse offset: " + err.Error())
+		return c.String(http.StatusBadRequest, "Invalid offset")
+	}
+
 	user := c.Get("user").(*models.User)
-	playlists, err := s.spotify.Playlists(user.SpotifyToken, 50, 0)
+	playlists, err := s.spotify.Playlists(user, limit, offset)
 
 	if err != nil {
 		slog.Error("Failed to get playlists: " + err.Error())
@@ -117,7 +141,7 @@ func (s *SpotifyController) GetPlaylists(c echo.Context) error {
 
 func (s *SpotifyController) Next(c echo.Context) error {
 	user := c.Get("user").(*models.User)
-	err := s.spotify.Next(user.SpotifyToken)
+	err := s.spotify.Next(user)
 
 	if err != nil {
 		slog.Error("Failed to skip track: " + err.Error())

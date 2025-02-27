@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/domnikl/music-box-game/backend/internal/models"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/spotify"
 )
@@ -55,24 +56,8 @@ type PlaylistsResponse struct {
 	} `json:"items"`
 }
 
-func (s *Spotify) Playlists(accessToken string, limit, offset int) (*PlaylistsResponse, error) {
-	// TODO: follow pagination
-
-	httpClient := &http.Client{}
-	url, err := url.Parse("https://api.spotify.com/v1/me/playlists?limit=" + strconv.Itoa(limit) + "&offset=" + strconv.Itoa(offset))
-	if err != nil {
-		return nil, err
-	}
-
-	request := &http.Request{
-		Method: "GET",
-		URL:    url,
-		Header: http.Header{
-			"Authorization": []string{"Bearer " + accessToken},
-		},
-	}
-
-	resp, err := httpClient.Do(request)
+func (s *Spotify) Playlists(user *models.User, limit, offset int) (*PlaylistsResponse, error) {
+	resp, err := s.doRequest(http.MethodGet, "/me/playlists?limit="+strconv.Itoa(limit)+"&offset="+strconv.Itoa(offset), user)
 	if err != nil {
 		return nil, err
 	}
@@ -119,22 +104,8 @@ type PlaylistResponse struct {
 	ID   string `json:"id"`
 }
 
-func (s *Spotify) Playlist(accessToken, id string) (*PlaylistResponse, error) {
-	httpClient := &http.Client{}
-	url, err := url.Parse("https://api.spotify.com/v1/playlists/" + id)
-	if err != nil {
-		return nil, err
-	}
-
-	request := &http.Request{
-		Method: "GET",
-		URL:    url,
-		Header: http.Header{
-			"Authorization": []string{"Bearer " + accessToken},
-		},
-	}
-
-	resp, err := httpClient.Do(request)
+func (s *Spotify) Playlist(user *models.User, id string) (*PlaylistResponse, error) {
+	resp, err := s.doRequest(http.MethodGet, "/playlists/"+id, user)
 	if err != nil {
 		return nil, err
 	}
@@ -146,7 +117,6 @@ func (s *Spotify) Playlist(accessToken, id string) (*PlaylistResponse, error) {
 		return nil, fmt.Errorf("failed to get playlist: %s %s", resp.Status, string(body))
 	}
 
-	// json decode
 	var playlist PlaylistResponse
 	err = json.NewDecoder(resp.Body).Decode(&playlist)
 	if err != nil {
@@ -156,27 +126,11 @@ func (s *Spotify) Playlist(accessToken, id string) (*PlaylistResponse, error) {
 	return &playlist, nil
 }
 
-func (s *Spotify) Next(accessToken string) error {
-	httpClient := &http.Client{}
-	url, err := url.Parse("https://api.spotify.com/v1/me/player/next")
+func (s *Spotify) Next(user *models.User) error {
+	resp, err := s.doRequest(http.MethodPost, "/me/player/next", user)
 	if err != nil {
 		return err
 	}
-
-	request := &http.Request{
-		Method: "POST",
-		URL:    url,
-		Header: http.Header{
-			"Authorization": []string{"Bearer " + accessToken},
-		},
-	}
-
-	resp, err := httpClient.Do(request)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -184,4 +138,32 @@ func (s *Spotify) Next(accessToken string) error {
 	}
 
 	return nil
+}
+
+func (s *Spotify) doRequest(method string, path string, user *models.User) (*http.Response, error) {
+	httpClient := &http.Client{}
+	url, err := url.Parse("https://api.spotify.com/v1" + path)
+	if err != nil {
+		return nil, err
+	}
+
+	request := &http.Request{
+		Method: method,
+		URL:    url,
+		Header: http.Header{
+			"Authorization": []string{"Bearer " + user.SpotifyToken},
+		},
+	}
+
+	resp, err := httpClient.Do(request)
+	if err != nil {
+		return resp, err
+	}
+
+	// TODO: handle token refresh automatically
+	if resp.StatusCode == http.StatusUnauthorized {
+		return resp, fmt.Errorf("unauthorized")
+	}
+
+	return resp, nil
 }

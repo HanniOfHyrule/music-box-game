@@ -23,7 +23,7 @@ func (m SpotifyMiddleware) HasToken(next echo.HandlerFunc) echo.HandlerFunc {
 			})
 		}
 
-		if user.SpotifyToken == "" {
+		if user.SpotifyRefreshToken == "" {
 			return c.JSON(http.StatusUnauthorized, map[string]string{
 				"message": "Missing Spotify token",
 			})
