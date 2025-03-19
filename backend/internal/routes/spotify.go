@@ -29,5 +29,9 @@ func setupSpotify(e *echo.Echo, db *gorm.DB, spotify *spotify.Spotify) {
 	needsSpotifyToken.Use(spotifyMiddleware.HasToken)
 	needsSpotifyToken.GET("/playlists", controller.GetPlaylists)
 	needsSpotifyToken.GET("/playlists/:id", controller.GetPlaylist)
-	needsSpotifyToken.GET("/player/next", controller.Next)
+	needsSpotifyToken.GET("/devices", controller.GetDevices)
+	needsSpotifyToken.GET("/currently-playing", controller.GetCurrentlyPlaying)
+	needsSpotifyToken.POST("/player/next", controller.Next)
+	needsSpotifyToken.POST("/player/pause", controller.Pause)
+	needsSpotifyToken.POST("/player/play", controller.Play)
 }

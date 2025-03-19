@@ -25,7 +25,7 @@ func (u *UserRepository) CreateUser(user *models.User) error {
 }
 
 func (u *UserRepository) UpdateUser(user *models.User) error {
-	err := u.db.Save(user)
+	err := u.db.Updates(user)
 	if err != nil {
 		return err.Error
 	}

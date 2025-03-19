@@ -1,0 +1,15 @@
+meta {
+  name: Currently Playing
+  type: http
+  seq: 10
+}
+
+get {
+  url: http://localhost:8080/spotify/currently-playing
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}
