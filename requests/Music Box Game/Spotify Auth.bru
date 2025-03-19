@@ -5,13 +5,13 @@ meta {
 }
 
 get {
-  url: http://localhost:8080/spotify/auth
+  url: http://localhost:8080/spotify/auth?apiToken={{bearerToken}}
   body: none
   auth: none
 }
 
 params:query {
-  : 
+  apiToken: {{bearerToken}}
 }
 
 headers {
