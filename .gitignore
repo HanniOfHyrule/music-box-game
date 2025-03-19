@@ -1,2 +1,5 @@
 tmp/
+node_modules
 .envrc
+.env
+expo-env.d.ts
